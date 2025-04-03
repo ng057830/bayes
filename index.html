@@ -250,7 +250,7 @@
     <!-- Solución -->
     <div id="solucion" class="tab-content">
       <div class="card">
-        <h2>Solución Teórica con KaTeX</h2>
+        <h2>Solución Teórica</h2>
         <!-- Aquí se renderiza la solución en LaTeX -->
         <div id="solution-latex"></div>
       </div>
@@ -391,10 +391,7 @@ P(\\text{Caja1}\\mid \\text{Azul})=
 \\frac{P(\\text{Caja1})\\cdot P(\\text{Azul}\\mid \\text{Caja1})}{P(\\text{Caja1})\\cdot P(\\text{Azul}\\mid \\text{Caja1})+P(\\text{Caja2})\\cdot P(\\text{Azul}\\mid \\text{Caja2})}
 $$
 
-Donde:
-- Para \\(\\text{Caja1}\\): \\(P(\\text{Caja1}) = ${ method === "moneda" ? "0.5" : "\\frac{2}{6}" }\\).
-- Para \\(\\text{Caja2}\\): \\(P(\\text{Caja2}) = ${ method === "moneda" ? "0.5" : "\\frac{4}{6}" }\\).
-
+Para la Caja 1, cuando se usa una moneda, la probabilidad es 0.5; en cambio, si se utiliza un dado, la probabilidad es 2 de 6. De manera similar, para la Caja 2 la probabilidad es 0.5 con la moneda y 4 de 6 con el dado.
 
 Y se tienen:
 $$
