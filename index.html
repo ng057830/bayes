@@ -1,948 +1,538 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Radar Bayes - Simulador Probabilístico</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Bolas y Bayes</title>
+  <!-- Estilos KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <style>
     :root {
       --primary: #6e44ff;
       --secondary: #3feee6;
       --dark: #120038;
       --light: #e4f0ff;
-      --success: #00cc99;
-      --warning: #fc5c65;
       --accent: #fc427b;
+      --background: linear-gradient(135deg, #120038 0%, #220066 100%);
     }
-    
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: 'Segoe UI', system-ui, sans-serif;
     }
-    
     body {
-      background-color: var(--dark);
+      background: var(--background);
       color: var(--light);
-      overflow-x: hidden;
-      background: linear-gradient(135deg, #120038 0%, #220066 100%);
       min-height: 100vh;
     }
-    
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 2rem;
+      padding: 1rem 2rem;
     }
-    
     header {
-      padding: 1rem 0;
       text-align: center;
-      position: relative;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
     }
-    
-    h1 {
+    header h1 {
       font-size: 2.5rem;
-      margin-bottom: 0.5rem;
       background: linear-gradient(to right, var(--secondary), var(--primary));
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
     }
-    
-    h2 {
-      font-size: 1.8rem;
-      margin: 1.5rem 0 1rem;
-      color: var(--secondary);
-    }
-    
-    h3 {
-      font-size: 1.4rem;
-      margin: 1rem 0;
-      color: var(--primary);
-    }
-    
-    p {
-      line-height: 1.6;
-      margin-bottom: 1rem;
-    }
-    
-    .card {
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 1.5rem;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      margin-bottom: 2rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-    }
-    
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
-    }
-    
     .tabs {
       display: flex;
+      justify-content: center;
+      gap: 1rem;
       margin-bottom: 1rem;
-      overflow-x: auto;
-      gap: 0.5rem;
     }
-    
     .tab {
-      padding: 0.75rem 1.25rem;
+      padding: 0.75rem 1.5rem;
       background: rgba(255, 255, 255, 0.1);
       border: none;
       border-radius: 8px;
       color: var(--light);
       cursor: pointer;
-      transition: all 0.3s;
-      font-weight: 500;
+      transition: background 0.3s;
     }
-    
     .tab.active {
       background: var(--primary);
-      color: white;
     }
-    
-    .tab:hover:not(.active) {
+    .tab:hover {
       background: rgba(255, 255, 255, 0.2);
     }
-    
     .tab-content {
       display: none;
     }
-    
     .tab-content.active {
       display: block;
       animation: fadeIn 0.5s;
     }
-    
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
+    .card {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
-    
-    .parameter-controls {
-      display: grid;
-      grid-template-columns: minmax(150px, 1fr) 3fr;
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
       gap: 1rem;
-      align-items: center;
       margin-bottom: 1rem;
-    }
-    
-    label {
-      font-weight: 500;
-    }
-    
-    input[type="range"] {
-      width: 100%;
-      height: 8px;
-      border-radius: 8px;
-      appearance: none;
-      background: rgba(255, 255, 255, 0.2);
-      cursor: pointer;
-    }
-    
-    input[type="range"]::-webkit-slider-thumb {
-      appearance: none;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--secondary);
-      cursor: pointer;
-      border: 2px solid white;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    }
-    
-    .value-display {
-      width: 60px;
-      text-align: center;
-      padding: 0.5rem;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      margin-left: 1rem;
-    }
-    
-    .button {
-      padding: 1rem 2rem;
-      border: none;
-      border-radius: 30px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s;
-      margin: 1rem 0.5rem 1rem 0;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      font-size: 1rem;
-      display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
     }
-    
-    .button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    .controls label {
+      font-weight: bold;
     }
-    
-    .button:active {
-      transform: translateY(1px);
+    .controls input[type="checkbox"] {
+      margin-right: 0.3rem;
     }
-    
-    .button.secondary {
-      background: linear-gradient(135deg, var(--secondary), #34accc);
-    }
-    
-    .button.small {
+    select, button {
       padding: 0.5rem 1rem;
-      font-size: 0.875rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
     }
-    
+    select {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--light);
+    }
+    button {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
     .simulation-area {
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin: 2rem 0;
     }
-    
-    .city-map {
-      width: 100%;
-      max-width: 600px;
-      height: 300px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 16px;
-      margin: 1rem 0;
-      position: relative;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .radar-point {
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
+    .boxes {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s;
-      color: white;
-      font-weight: bold;
-      font-size: 12px;
-      z-index: 2;
+      gap: 2rem;
+      margin-bottom: 1rem;
     }
-    
-    .radar-point.active {
-      background: var(--secondary);
-      box-shadow: 0 0 15px var(--secondary);
-      transform: scale(1.2);
-    }
-    
-    .radar-point[data-point="L1"] {
-      top: 20%;
-      left: 15%;
-    }
-    
-    .radar-point[data-point="L2"] {
-      top: 30%;
-      right: 25%;
-    }
-    
-    .radar-point[data-point="L3"] {
-      bottom: 20%;
-      left: 30%;
-    }
-    
-    .radar-point[data-point="L4"] {
-      bottom: 35%;
-      right: 15%;
-    }
-    
-    .car {
-      position: absolute;
-      width: 30px;
-      height: 15px;
-      background: var(--accent);
-      border-radius: 5px;
-      bottom: -20px;
-      left: calc(50% - 15px);
-      z-index: 3;
-      transition: all 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
-    }
-    
-    .car.driving {
-      animation: drivingAnimation 3s forwards;
-    }
-    
-    @keyframes drivingAnimation {
-      0% {
-        bottom: -20px;
-        left: calc(50% - 15px);
-      }
-      50% {
-        bottom: 50%;
-        left: calc(var(--target-x) - 15px);
-      }
-      100% {
-        bottom: 120%;
-        left: calc(var(--target-x) - 15px);
-      }
-    }
-    
-    .road {
-      position: absolute;
-      height: 100%;
-      width: 40px;
-      background: rgba(255, 255, 255, 0.1);
-      left: calc(50% - 20px);
-      z-index: 1;
-    }
-    
-    .result-card {
-      width: 100%;
-      margin-top: 1.5rem;
-      transition: all 0.3s;
-    }
-    
-    .result {
-      display: flex;
-      justify-content: space-between;
-      margin: 0.5rem 0;
-      padding: 0.75rem;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
-    }
-    
-    .result strong {
-      color: var(--secondary);
-    }
-    
-    .progress-bar {
-      width: 100%;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      margin: 0.5rem 0 1rem;
-      overflow: hidden;
-    }
-    
-    .progress {
-      height: 100%;
-      background: linear-gradient(to right, var(--primary), var(--secondary));
-      transition: width 0.3s ease;
-      width: 0%;
-    }
-    
-    .formula {
+    .box {
       background: rgba(255, 255, 255, 0.1);
       padding: 1rem;
-      border-radius: 8px;
-      margin: 1rem 0;
-      overflow-x: auto;
-      font-family: 'Courier New', monospace;
-    }
-    
-    .formula p {
+      border-radius: 12px;
+      width: 150px;
       text-align: center;
-      font-size: 1.1rem;
+      position: relative;
     }
-    
-    .step {
-      display: flex;
-      margin: 1rem 0;
-      padding: 1rem;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      align-items: center;
+    .box h3 {
+      margin-bottom: 0.5rem;
     }
-    
-    .step-number {
+    .box p {
+      margin-bottom: 0.25rem;
+    }
+    .ball {
       width: 30px;
       height: 30px;
       border-radius: 50%;
-      background: var(--primary);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 1rem;
-      flex-shrink: 0;
-    }
-    
-    .tooltip {
       position: absolute;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 0.5rem;
-      border-radius: 4px;
-      display: none;
-      z-index: 100;
-      font-size: 0.875rem;
-      max-width: 200px;
-      pointer-events: none;
+      top: -40px;
+      left: calc(50% - 15px);
+      opacity: 0;
     }
-    
-    .info-icon {
-      display: inline-flex;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
+    .ball.animate {
+      animation: drop 1s forwards;
+    }
+    @keyframes drop {
+      0% { top: -40px; opacity: 0; }
+      50% { opacity: 1; }
+      100% { top: 80%; opacity: 1; }
+    }
+    .results {
+      width: 100%;
+      text-align: center;
+    }
+    .results p {
+      margin: 0.5rem 0;
+      font-size: 1.1rem;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
       background: rgba(255, 255, 255, 0.2);
-      color: white;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      cursor: pointer;
-      margin-left: 0.5rem;
-      font-weight: bold;
+      border-radius: 4px;
+      margin-top: 0.5rem;
+      overflow: hidden;
     }
-    
-    .icon {
-      width: 20px;
-      height: 20px;
-    }
-    
-    @media (max-width: 768px) {
-      .container {
-        padding: 1rem;
-      }
-      
-      h1 {
-        font-size: 1.8rem;
-      }
-      
-      h2 {
-        font-size: 1.4rem;
-      }
-      
-      .city-map {
-        height: 250px;
-      }
-      
-      .parameter-controls {
-        grid-template-columns: 1fr;
-      }
-      
-      .button {
-        width: 100%;
-        margin: 0.5rem 0;
-      }
-      
-      .tabs {
-        flex-wrap: wrap;
-      }
-      
-      .tab {
-        flex: 1 0 auto;
-        text-align: center;
-        font-size: 0.875rem;
-        padding: 0.5rem;
-      }
-    }
-    
-    /* Elementos decorativos futuristas */
-    .glow {
-      position: absolute;
-      width: 100%;
+    .progress {
       height: 100%;
-      top: 0;
-      left: 0;
-      background: radial-gradient(circle at 50% 50%, rgba(110, 68, 255, 0.15), transparent 60%);
-      z-index: -1;
-    }
-    
-    .circle-decoration {
-      position: fixed;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      pointer-events: none;
-    }
-    
-    .circle-1 {
-      width: 300px;
-      height: 300px;
-      top: -150px;
-      right: -100px;
-      border-color: rgba(110, 68, 255, 0.1);
-    }
-    
-    .circle-2 {
-      width: 200px;
-      height: 200px;
-      bottom: -100px;
-      left: -50px;
-      border-color: rgba(63, 238, 230, 0.1);
-    }
-    
-    .grid-lines {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 40px 40px,
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px) 0 0 / 40px 40px;
-      z-index: -1;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      width: 0%;
+      transition: width 0.3s;
     }
   </style>
 </head>
 <body>
-  <div class="circle-decoration circle-1"></div>
-  <div class="circle-decoration circle-2"></div>
-  <div class="grid-lines"></div>
-  
   <div class="container">
     <header>
-      <h1>RADAR BAYES</h1>
-      <p>Simulador probabilístico para comprender la regla de Bayes y la probabilidad condicional</p>
-      <div class="glow"></div>
+      <h1>Simulador de Bolas y Bayes</h1>
+      <p>Comprende la probabilidad condicional con selección de bolas</p>
     </header>
-    
     <div class="tabs">
-      <button class="tab active" data-tab="simulation">Simulador</button>
-      <button class="tab" data-tab="concept">Conceptos</button>
-      <button class="tab" data-tab="solution">Solución paso a paso</button>
+      <button class="tab active" data-tab="simulacion">Simulación</button>
+      <button class="tab" data-tab="solucion">Solución</button>
     </div>
-    
-    <!-- Simulador -->
-    <div id="simulation" class="tab-content active">
+    <!-- Simulación -->
+    <div id="simulacion" class="tab-content active">
       <div class="card">
-        <h2>Escenario</h2>
-        <p>La policía planea hacer cumplir los límites de velocidad mediante radares ubicados en 4 puntos (L₁, L₂, L₃ y L₄) de la ciudad. Cada radar opera un determinado porcentaje del tiempo, y la probabilidad de que pases por cada uno en tu ruta al trabajo varía.</p>
-        <p>El objetivo es determinar la probabilidad total de recibir una multa por exceso de velocidad.</p>
-      </div>
-      
-      <div class="grid">
-        <!-- Configuración de radares -->
-        <div class="card">
-          <h3>Configuración de Radares</h3>
-          <p>Porcentaje de tiempo de operación de cada radar:</p>
-          
-          <div class="parameter-controls">
-            <label for="radar1">Radar L₁ <span class="info-icon" data-tooltip="Porcentaje de tiempo que el radar L₁ está activo">i</span></label>
-            <div style="display: flex; align-items: center;">
-              <input type="range" id="radar1" min="0" max="100" value="40" class="radar-slider">
-              <span class="value-display" id="radar1-value">40%</span>
-            </div>
-          </div>
-          
-          <div class="parameter-controls">
-            <label for="radar2">Radar L₂ <span class="info-icon" data-tooltip="Porcentaje de tiempo que el radar L₂ está activo">i</span></label>
-            <div style="display: flex; align-items: center;">
-              <input type="range" id="radar2" min="0" max="100" value="30" class="radar-slider">
-              <span class="value-display" id="radar2-value">30%</span>
-            </div>
-          </div>
-          
-          <div class="parameter-controls">
-            <label for="radar3">Radar L₃ <span class="info-icon" data-tooltip="Porcentaje de tiempo que el radar L₃ está activo">i</span></label>
-            <div style="display: flex; align-items: center;">
-              <input type="range" id="radar3" min="0" max="100" value="20" class="radar-slider">
-              <span class="value-display" id="radar3-value">20%</span>
-            </div>
-          </div>
-          
-          <div class="parameter-controls">
-            <label for="radar4">Radar L₄ <span class="info-icon" data-tooltip="Porcentaje de tiempo que el radar L₄ está activo">i</span></label>
-            <div style="display: flex; align-items: center;">
-              <input type="range" id="radar4" min="0" max="100" value="30" class="radar-slider">
-              <span class="value-display" id="radar4-value">30%</span>
-            </div>
-          </div>
+        <!-- Controles de selección mediante checkboxes -->
+        <div class="controls">
+          <label>Método:</label>
+          <label><input type="checkbox" id="metodoMoneda" name="metodo" value="moneda" checked> Moneda (50%-50%)</label>
+          <label><input type="checkbox" id="metodoDado" name="metodo" value="dado"> Dado (Caja1: 1-2, Caja2: 3-6)</label>
         </div>
-        
-        <!-- Configuración de rutas -->
-        <div class="card">
-          <h3>Probabilidades de Ruta</h3>
-          <p>Probabilidad de pasar por cada punto:</p>
-          
-          <div class="parameter-controls">
-            <label for="route1">Ruta L₁ <span class="info-icon" data-tooltip="Probabilidad de pasar por L₁ en tu ruta al trabajo">i</span></label>
-            <div style="display: flex; align-items: center;">
-              <input type="range" id="route1" min="0" max="100" value="20" class="route-slider">
-              <span class="value-display" id="route1-value">0.20</span>
-            </div>
-          </div>
-          
-          <div class="parameter-controls">
-            <label for="route2">Ruta L₂ <span class="info-icon" data-tooltip="Probabilidad de pasar por L₂ en tu ruta">i</span></label>
-            <div style="display: flex; align-items: center;">
-              <input type="range" id="route2" min="0" max="100" value="10" class="route-slider">
-              <span class="value-display" id="route2-value">0.10</span>
-            </div>
-          </div>
-          
-          <div class="parameter-controls">
-            <label for="route3">Ruta L₃ <span class="info-icon" data-tooltip="Probabilidad de pasar por L₃ en tu ruta">i</span></label>
-            <div style="display: flex; align-items: center;">
-              <input type="range" id="route3" min="0" max="100" value="50" class="route-slider">
-              <span class="value-display" id="route3-value">0.50</span>
-            </div>
-          </div>
-          
-          <div class="parameter-controls">
-            <label for="route4">Ruta L₄ <span class="info-icon" data-tooltip="Probabilidad de pasar por L₄ en tu ruta">i</span></label>
-            <div style="display: flex; align-items: center;">
-              <input type="range" id="route4" min="0" max="100" value="20" class="route-slider">
-              <span class="value-display" id="route4-value">0.20</span>
-            </div>
-          </div>
-          
-          <div class="parameter-controls">
-            <label>Total: </label>
-            <span id="total-probability">100%</span>
-          </div>
+        <div class="controls">
+          <label>Condición:</label>
+          <label><input type="checkbox" id="condicionAzul" name="condicion" value="azul" checked> Bola Azul (verifica Caja 1)</label>
+          <label><input type="checkbox" id="condicionRojo" name="condicion" value="rojo"> Bola Roja (verifica Caja 2)</label>
         </div>
-      </div>
-      
-      <!-- Área de simulación -->
-      <div class="simulation-area">
-        <div class="city-map">
-          <div class="road"></div>
-          <div class="radar-point" data-point="L1">L₁</div>
-          <div class="radar-point" data-point="L2">L₂</div>
-          <div class="radar-point" data-point="L3">L₃</div>
-          <div class="radar-point" data-point="L4">L₄</div>
-          <div class="car"></div>
-        </div>
-        
-        <div>
-          <button id="simulate-btn" class="button">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 3l14 9-14 9V3z"></path>
-            </svg>
-            Simular Viaje
-          </button>
-          <button id="reset-btn" class="button secondary">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z"></path>
-              <path d="M12 8v4l3 3"></path>
-            </svg>
-            Reiniciar
-          </button>
-          <button id="auto-sim-btn" class="button small">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 9l-7 7-7-7"></path>
-            </svg>
-            Simulación Automática
-          </button>
-          <!-- Selector para configurar el número de experimentos -->
-          <label for="numExperiments" style="margin-left: 1rem;">Número de viajes:</label>
-          <select id="numExperiments" style="margin-left: 0.5rem;">
+        <div class="controls">
+          <label for="numExperimentos">N° Simulaciones:</label>
+          <select id="numExperimentos">
+            <option value="1">1</option>
             <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="30">30</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
           </select>
         </div>
-        
-        <div class="result-card card">
-          <h3>Resultados</h3>
-          
-          <div class="result">
-            <span>Probabilidad teórica de multa:</span>
-            <strong id="theoretical-probability">0.00%</strong>
+        <div class="controls">
+          <button id="simular-btn">Simular</button>
+          <button id="reiniciar-btn">Reiniciar</button>
+        </div>
+      </div>
+      <div class="simulation-area">
+        <div class="boxes">
+          <div class="box" id="caja1">
+            <h3>Caja 1</h3>
+            <p>3 Rojas</p>
+            <p>2 Azules</p>
+            <div class="ball" id="ball-c1"></div>
           </div>
-          
-          <div class="result">
-            <span>Probabilidad experimental:</span>
-            <strong id="experimental-probability">0.00%</strong>
+          <div class="box" id="caja2">
+            <h3>Caja 2</h3>
+            <p>2 Rojas</p>
+            <p>8 Azules</p>
+            <div class="ball" id="ball-c2"></div>
           </div>
-          
-          <div class="result">
-            <span>Total de viajes simulados:</span>
-            <strong id="total-trips">0</strong>
-          </div>
-          
-          <div class="result">
-            <span>Multas recibidas:</span>
-            <strong id="tickets-count">0</strong>
-          </div>
-          
+        </div>
+        <div class="results">
+          <p>Total Simulaciones: <span id="totalSim">0</span></p>
+          <p>Condición observada (<span id="condicionText">Azul</span>): <span id="condCount">0</span></p>
+          <p>Cumple con el criterio: <span id="favorableCount">0</span></p>
+          <p>Probabilidad Experimental: <span id="expProb">0.00</span>%</p>
+          <p>Probabilidad Teórica: <span id="theoProb">0.00</span>%</p>
           <div class="progress-bar">
-            <div class="progress" id="simulation-progress"></div>
-          </div>
-          
-          <div class="chart-container">
-            <div class="bar theoretical-bar" id="theoretical-bar" style="height: 0%;">
-              <div class="bar-value" id="theoretical-bar-value">0%</div>
-              <div class="bar-label">Teórica</div>
-            </div>
-            <div class="bar experimental-bar" id="experimental-bar" style="height: 0%;">
-              <div class="bar-value" id="experimental-bar-value">0%</div>
-              <div class="bar-label">Experimental</div>
-            </div>
+            <div class="progress" id="progress"></div>
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- Conceptos -->
-    <div id="concept" class="tab-content">
+    <!-- Solución -->
+    <div id="solucion" class="tab-content">
       <div class="card">
-        <h2>Teorema de Bayes y Probabilidad Condicional</h2>
-        <p>El teorema de Bayes permite actualizar la probabilidad de un evento basado en nueva evidencia. En otras palabras, nos ayuda a ajustar nuestras creencias a medida que obtenemos más información.</p>
-        
-        <h3>Probabilidad Condicional</h3>
-        <p>Se define como la probabilidad de que ocurra el evento A, dado que ya ocurrió B. Se expresa como:</p>
-        <div class="formula">
-          <p>P(A|B) = P(A ∩ B) / P(B)</p>
-        </div>
-        <p>donde:</p>
-        <ul>
-          <li><strong>P(A|B)</strong> es la probabilidad de A dado B.</li>
-          <li><strong>P(A ∩ B)</strong> es la probabilidad de que A y B ocurran juntos.</li>
-          <li><strong>P(B)</strong> es la probabilidad de que ocurra B.</li>
-        </ul>
-        
-        <h3>Teorema de Bayes</h3>
-        <p>Permite calcular <strong>P(A|B)</strong> en función de <strong>P(B|A)</strong>, <strong>P(A)</strong> y <strong>P(B)</strong>:</p>
-        <div class="formula">
-          <p>P(A|B) = [P(B|A) × P(A)] / P(B)</p>
-        </div>
-        
-        <h3>Regla de la Probabilidad Total</h3>
-        <p>Si un evento B puede ocurrir mediante varios eventos mutuamente excluyentes A₁, A₂, …, Aₙ, se tiene:</p>
-        <div class="formula">
-          <p>P(B) = Σ P(B|Aᵢ) × P(Aᵢ)</p>
-        </div>
-        <p>En nuestro simulador, usamos esta regla para calcular la probabilidad total de recibir una multa.</p>
-      </div>
-    </div>
-    
-    <!-- Solución paso a paso -->
-    <div id="solution" class="tab-content">
-      <div class="card">
-        <h2>Solución paso a paso</h2>
-        
-        <div class="step">
-          <div class="step-number">1</div>
-          <div>
-            <p><strong>Definir los parámetros:</strong> Establecer <em>P(Lᵢ)</em> (la probabilidad de pasar por el radar Lᵢ) y <em>P(multa|Lᵢ)</em> (el porcentaje de tiempo que el radar Lᵢ está activo).</p>
-          </div>
-        </div>
-        
-        <div class="step">
-          <div class="step-number">2</div>
-          <div>
-            <p><strong>Aplicar la regla de la probabilidad total:</strong></p>
-            <div class="formula">
-              <p>P(multa) = Σ P(multa|Lᵢ) × P(Lᵢ)</p>
-            </div>
-            <p>Por ejemplo, si <em>P(multa|L₁)=0.40</em> y <em>P(L₁)=0.20</em>, se contribuye con 0.08 a la probabilidad total.</p>
-          </div>
-        </div>
-        
-        <div class="step">
-          <div class="step-number">3</div>
-          <div>
-            <p><strong>Realizar simulaciones:</strong> Se ejecutan viajes aleatorios donde se selecciona un punto (L₁ a L₄) según las probabilidades de ruta y se determina si el radar está activo. Así se compara la frecuencia experimental con la teórica.</p>
-          </div>
-        </div>
-        
-        <div class="step">
-          <div class="step-number">4</div>
-          <div>
-            <p><strong>Comparar resultados:</strong> Los valores teóricos y experimentales se muestran en pantalla para observar cómo, al aumentar el número de simulaciones, el valor experimental se aproxima al teórico.</p>
-          </div>
-        </div>
+        <h2>Solución Teórica con KaTeX</h2>
+        <!-- Aquí se renderiza la solución en LaTeX -->
+        <div id="solution-latex"></div>
       </div>
     </div>
   </div>
-  
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Variables de simulación
-      let totalTrips = 0;
-      let ticketsCount = 0;
-      
-      // Actualización de sliders de radares
-      const radarSliders = document.querySelectorAll('.radar-slider');
-      radarSliders.forEach(slider => {
-        slider.addEventListener('input', function() {
-          const display = document.getElementById(slider.id + '-value');
-          display.textContent = slider.value + '%';
-          updateTheoreticalProbability();
+    document.addEventListener("DOMContentLoaded", () => {
+      // Pestañas
+      const tabs = document.querySelectorAll(".tab");
+      const tabContents = document.querySelectorAll(".tab-content");
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          tabs.forEach((t) => t.classList.remove("active"));
+          tabContents.forEach((tc) => tc.classList.remove("active"));
+          tab.classList.add("active");
+          document.getElementById(tab.getAttribute("data-tab")).classList.add("active");
         });
       });
-      
-      // Actualización de sliders de rutas (se muestran como probabilidades decimales)
-      const routeSliders = document.querySelectorAll('.route-slider');
-      routeSliders.forEach(slider => {
-        slider.addEventListener('input', function() {
-          const display = document.getElementById(slider.id + '-value');
-          display.textContent = (slider.value / 100).toFixed(2);
-          updateTotalProbability();
-          updateTheoreticalProbability();
-        });
-      });
-      
-      function updateTotalProbability() {
-        let total = 0;
-        routeSliders.forEach(slider => total += Number(slider.value));
-        document.getElementById('total-probability').textContent = total + '%';
+  
+      // Elementos de controles (checkboxes)
+      const metodoMonedaCheckbox = document.getElementById("metodoMoneda");
+      const metodoDadoCheckbox = document.getElementById("metodoDado");
+      const condicionAzulCheckbox = document.getElementById("condicionAzul");
+      const condicionRojoCheckbox = document.getElementById("condicionRojo");
+      const numExperimentosSelect = document.getElementById("numExperimentos");
+  
+      // Elementos de resultados
+      const totalSimEl = document.getElementById("totalSim");
+      const condCountEl = document.getElementById("condCount");
+      const favorableCountEl = document.getElementById("favorableCount");
+      const expProbEl = document.getElementById("expProb");
+      const theoProbEl = document.getElementById("theoProb");
+      const progressEl = document.getElementById("progress");
+      const condicionTextEl = document.getElementById("condicionText");
+  
+      // Elementos para animar la bola
+      const ballC1 = document.getElementById("ball-c1");
+      const ballC2 = document.getElementById("ball-c2");
+  
+      // Variable de simulación
+      let totalSimulations = 0;
+      let conditionCount = 0;
+      let favorableCount = 0;
+  
+      // Funciones para obtener el valor seleccionado (se simula selección única)
+      function getSelectedMethod() {
+        if (metodoMonedaCheckbox.checked) return "moneda";
+        if (metodoDadoCheckbox.checked) return "dado";
+        return "moneda"; // por defecto
       }
-      
-      function updateTheoreticalProbability() {
-        // Se calcula la probabilidad teórica: Σ (radar_i/100 * ruta_i/100) convertida a porcentaje
-        const r1 = Number(document.getElementById('radar1').value) / 100;
-        const r2 = Number(document.getElementById('radar2').value) / 100;
-        const r3 = Number(document.getElementById('radar3').value) / 100;
-        const r4 = Number(document.getElementById('radar4').value) / 100;
-        
-        const rt1 = Number(document.getElementById('route1').value) / 100;
-        const rt2 = Number(document.getElementById('route2').value) / 100;
-        const rt3 = Number(document.getElementById('route3').value) / 100;
-        const rt4 = Number(document.getElementById('route4').value) / 100;
-        
-        const theoretical = (r1*rt1 + r2*rt2 + r3*rt3 + r4*rt4)*100;
-        document.getElementById('theoretical-probability').textContent = theoretical.toFixed(2) + '%';
-        
-        // Actualizar barra teórica
-        document.getElementById('theoretical-bar').style.height = theoretical + '%';
-        document.getElementById('theoretical-bar-value').textContent = theoretical.toFixed(2) + '%';
+      function getSelectedCondition() {
+        if (condicionAzulCheckbox.checked) return "azul";
+        if (condicionRojoCheckbox.checked) return "rojo";
+        return "azul";
       }
-      
-      // Cambio de pestañas
-      const tabs = document.querySelectorAll('.tab');
-      const tabContents = document.querySelectorAll('.tab-content');
-      tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-          tabs.forEach(t => t.classList.remove('active'));
-          tabContents.forEach(tc => tc.classList.remove('active'));
-          tab.classList.add('active');
-          const tabId = tab.getAttribute('data-tab');
-          document.getElementById(tabId).classList.add('active');
-        });
+  
+      // Forzar selección única en cada grupo de checkboxes
+      metodoMonedaCheckbox.addEventListener("change", () => {
+        if (metodoMonedaCheckbox.checked) {
+          metodoDadoCheckbox.checked = false;
+        } else if (!metodoDadoCheckbox.checked) {
+          metodoMonedaCheckbox.checked = true;
+        }
+        updateTheoretical();
+        updateSolution();
       });
-      
-      // Elementos de la simulación
-      const simulateBtn = document.getElementById('simulate-btn');
-      const resetBtn = document.getElementById('reset-btn');
-      const autoSimBtn = document.getElementById('auto-sim-btn');
-      const carElement = document.querySelector('.car');
-      const radarPoints = document.querySelectorAll('.radar-point');
-      const totalTripsDisplay = document.getElementById('total-trips');
-      const ticketsCountDisplay = document.getElementById('tickets-count');
-      const experimentalProbabilityDisplay = document.getElementById('experimental-probability');
-      const experimentalBar = document.getElementById('experimental-bar');
-      const experimentalBarValue = document.getElementById('experimental-bar-value');
-      const progressBar = document.getElementById('simulation-progress');
-      
-      function simulateTrip() {
-        // Obtener probabilidades de ruta en formato decimal
-        const rt1 = Number(document.getElementById('route1').value) / 100;
-        const rt2 = Number(document.getElementById('route2').value) / 100;
-        const rt3 = Number(document.getElementById('route3').value) / 100;
-        const rt4 = Number(document.getElementById('route4').value) / 100;
-        const cumulative = [rt1, rt1+rt2, rt1+rt2+rt3, rt1+rt2+rt3+rt4];
-        const rand = Math.random();
-        let selectedIndex = 0;
-        for (let i = 0; i < 4; i++) {
-          if (rand < cumulative[i]) {
-            selectedIndex = i;
-            break;
+      metodoDadoCheckbox.addEventListener("change", () => {
+        if (metodoDadoCheckbox.checked) {
+          metodoMonedaCheckbox.checked = false;
+        } else if (!metodoMonedaCheckbox.checked) {
+          metodoMonedaCheckbox.checked = true;
+        }
+        updateTheoretical();
+        updateSolution();
+      });
+      condicionAzulCheckbox.addEventListener("change", () => {
+        if (condicionAzulCheckbox.checked) {
+          condicionRojoCheckbox.checked = false;
+        } else if (!condicionRojoCheckbox.checked) {
+          condicionAzulCheckbox.checked = true;
+        }
+        updateTheoretical();
+        updateSolution();
+      });
+      condicionRojoCheckbox.addEventListener("change", () => {
+        if (condicionRojoCheckbox.checked) {
+          condicionAzulCheckbox.checked = false;
+        } else if (!condicionAzulCheckbox.checked) {
+          condicionAzulCheckbox.checked = true;
+        }
+        updateTheoretical();
+        updateSolution();
+      });
+  
+      // Actualiza la probabilidad teórica mostrada
+      function updateTheoretical() {
+        const method = getSelectedMethod();
+        const condition = getSelectedCondition();
+        let pBox1, pBox2;
+        if (method === "moneda") {
+          pBox1 = 0.5;
+          pBox2 = 0.5;
+        } else {
+          pBox1 = 2 / 6;
+          pBox2 = 4 / 6;
+        }
+  
+        if (condition === "azul") {
+          // Para bola azul se calcula P(Caja1|Azul)
+          const pCondBox1 = 2 / 5;
+          const pCondBox2 = 8 / 10;
+          const theo = (pBox1 * pCondBox1) / ((pBox1 * pCondBox1) + (pBox2 * pCondBox2));
+          theoProbEl.textContent = (theo * 100).toFixed(2);
+          condicionTextEl.textContent = "Azul";
+        } else {
+          // Para bola roja se calcula P(Caja2|Rojo)
+          const pCondBox1 = 3 / 5;
+          const pCondBox2 = 2 / 10;
+          const theo = (pBox2 * pCondBox2) / ((pBox1 * pCondBox1) + (pBox2 * pCondBox2));
+          theoProbEl.textContent = (theo * 100).toFixed(2);
+          condicionTextEl.textContent = "Rojo";
+        }
+      }
+  
+      // Función que actualiza la solución en LaTeX usando KaTeX
+      function updateSolution() {
+        const method = getSelectedMethod();
+        const condition = getSelectedCondition();
+        let solutionText = "";
+        if (condition === "azul") {
+          // Desarrollo para bola azul: se busca P(Caja1|Azul)
+          solutionText = `
+$$\\textbf{Ejercicio con Bola Azul - Método: ${method === "moneda" ? "Moneda (50\\%-50\\%)" : "Dado (Caja1: 1-2, Caja2: 3-6)"} }$$
+
+Aplicando el teorema de Bayes:
+$$
+P(\\text{Caja1}\\mid \\text{Azul})=
+\\frac{P(\\text{Caja1})\\cdot P(\\text{Azul}\\mid \\text{Caja1})}{P(\\text{Caja1})\\cdot P(\\text{Azul}\\mid \\text{Caja1})+P(\\text{Caja2})\\cdot P(\\text{Azul}\\mid \\text{Caja2})}
+$$
+
+Donde:
+- Para \\(\\text{Caja1}\\): \\(P(\\text{Caja1}) = ${ method === "moneda" ? "0.5" : "\\frac{2}{6}" }\\).
+- Para \\(\\text{Caja2}\\): \\(P(\\text{Caja2}) = ${ method === "moneda" ? "0.5" : "\\frac{4}{6}" }\\).
+
+
+Y se tienen:
+$$
+P(\\text{Azul}\\mid \\text{Caja1})=\\frac{2}{5}\\quad,\\quad P(\\text{Azul}\\mid \\text{Caja2})=\\frac{8}{10}
+$$
+
+Sustituyendo:
+$$
+P(\\text{Caja1}\\mid \\text{Azul})=
+\\frac{${ method === "moneda" ? "0.5" : "\\frac{2}{6}" }\\times \\frac{2}{5}}
+{${ method === "moneda" ? "0.5" : "\\frac{2}{6}" }\\times \\frac{2}{5}+${ method === "moneda" ? "0.5" : "\\frac{4}{6}" }\\times \\frac{8}{10}}
+$$
+Por ejemplo, con método Moneda:
+$$
+P(\\text{Caja1}\\mid \\text{Azul})=
+\\frac{0.5\\times0.4}{0.5\\times0.4+0.5\\times0.8}=\\frac{0.2}{0.2+0.4}=\\frac{0.2}{0.6}\\approx 0.33
+$$
+`;
+        } else {
+          // Desarrollo para bola roja: se busca P(Caja2|Rojo)
+          solutionText = `
+$$\\textbf{Ejercicio con Bola Roja - Método: ${method === "moneda" ? "Moneda (50\\%-50\\%)" : "Dado (Caja1: 1-2, Caja2: 3-6)"} }$$
+
+Aplicando el teorema de Bayes:
+$$
+P(\\text{Caja2}\\mid \\text{Rojo})=
+\\frac{P(\\text{Caja2})\\cdot P(\\text{Rojo}\\mid \\text{Caja2})}{P(\\text{Caja1})\\cdot P(\\text{Rojo}\\mid \\text{Caja1})+P(\\text{Caja2})\\cdot P(\\text{Rojo}\\mid \\text{Caja2})}
+$$
+
+Donde:
+- Para \\(\\text{Caja1}\\): \\(P(\\text{Caja1})=
+${ method === "moneda" ? "0.5" : "\\frac{2}{6}" }\\) y \\(P(\\text{Rojo}\\mid \\text{Caja1})=\\frac{3}{5}\\).
+- Para \\(\\text{Caja2}\\): \\(P(\\text{Caja2})=
+${ method === "moneda" ? "0.5" : "\\frac{4}{6}" }\\) y \\(P(\\text{Rojo}\\mid \\text{Caja2})=\\frac{2}{10}\\).
+
+Sustituyendo:
+$$
+P(\\text{Caja2}\\mid \\text{Rojo})=
+\\frac{${ method === "moneda" ? "0.5" : "\\frac{4}{6}" }\\times \\frac{2}{10}}
+{${ method === "moneda" ? "0.5" : "\\frac{2}{6}" }\\times \\frac{3}{5}+${ method === "moneda" ? "0.5" : "\\frac{4}{6}" }\\times \\frac{2}{10}}
+$$
+Por ejemplo, con método Moneda:
+$$
+P(\\text{Caja2}\\mid \\text{Rojo})=
+\\frac{0.5\\times0.2}{0.5\\times0.6+0.5\\times0.2}=\\frac{0.1}{0.3+0.1}=\\frac{0.1}{0.4}=0.25
+$$
+`;
+        }
+        document.getElementById("solution-latex").innerHTML = solutionText;
+        renderMathInElement(document.getElementById("solution-latex"), {
+          delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "$", right: "$", display: false}
+          ]
+        });
+      }
+  
+      // Función para simular un experimento
+      function simulateExperiment() {
+        const method = getSelectedMethod();
+        const condition = getSelectedCondition();
+        let box; // 1 para Caja1, 2 para Caja2
+        if (method === "moneda") {
+          box = Math.random() < 0.5 ? 1 : 2;
+        } else {
+          let roll = Math.floor(Math.random() * 6) + 1;
+          box = roll <= 2 ? 1 : 2;
+        }
+  
+        let ballColor;
+        if (box === 1) {
+          // Caja 1: 3 rojas, 2 azules (total 5)
+          ballColor = Math.random() < (3 / 5) ? "rojo" : "azul";
+          animateBall(ballC1, ballColor);
+        } else {
+          // Caja 2: 2 rojas, 8 azules (total 10)
+          ballColor = Math.random() < (2 / 10) ? "rojo" : "azul";
+          animateBall(ballC2, ballColor);
+        }
+  
+        totalSimulations++;
+        // Para condición "azul" se busca que la bola provenga de Caja1; para "rojo" de Caja2.
+        if (ballColor === condition) {
+          conditionCount++;
+          if ((condition === "azul" && box === 1) || (condition === "rojo" && box === 2)) {
+            favorableCount++;
           }
         }
-        
-        // Relacionar índice con radar L₁ a L₄
-        const radarId = 'radar' + (selectedIndex + 1);
-        const radarValue = Number(document.getElementById(radarId).value) / 100;
-        const ticket = Math.random() < radarValue;
-        
-        // Resaltar el radar seleccionado y animar el carro
-        const selectedRadar = document.querySelector('.radar-point[data-point="L' + (selectedIndex + 1) + '"]');
-        radarPoints.forEach(rp => rp.classList.remove('active'));
-        selectedRadar.classList.add('active');
-        
-        // Animar el carro: se obtiene la posición horizontal del radar dentro del contenedor
-        const cityMap = document.querySelector('.city-map');
-        const mapRect = cityMap.getBoundingClientRect();
-        const targetRect = selectedRadar.getBoundingClientRect();
-        const targetX = targetRect.left - mapRect.left + (targetRect.width / 2);
-        carElement.style.setProperty('--target-x', targetX + 'px');
-        carElement.classList.add('driving');
-        setTimeout(() => {
-          carElement.classList.remove('driving');
-        }, 3000);
-        
-        // Actualizar contadores de la simulación
-        totalTrips++;
-        if (ticket) ticketsCount++;
-        totalTripsDisplay.textContent = totalTrips;
-        ticketsCountDisplay.textContent = ticketsCount;
-        
-        const experimental = (ticketsCount / totalTrips) * 100;
-        experimentalProbabilityDisplay.textContent = experimental.toFixed(2) + '%';
-        experimentalBar.style.height = experimental + '%';
-        experimentalBarValue.textContent = experimental.toFixed(2) + '%';
-        
-        // Actualizar la barra de progreso (máximo 100 simulaciones para visualización)
-        const progress = Math.min(totalTrips, 100);
-        progressBar.style.width = progress + '%';
+  
+        totalSimEl.textContent = totalSimulations;
+        condCountEl.textContent = conditionCount;
+        favorableCountEl.textContent = favorableCount;
+        let expProb = conditionCount > 0 ? ((favorableCount / conditionCount) * 100).toFixed(2) : 0;
+        expProbEl.textContent = expProb;
+        let progress = Math.min(totalSimulations, 100);
+        progressEl.style.width = progress + "%";
+        updateTheoretical();
+        updateSolution();
       }
-      
-      simulateBtn.addEventListener('click', simulateTrip);
-      
-      autoSimBtn.addEventListener('click', function() {
+  
+      // Animación de la bola
+      function animateBall(ballElement, color) {
+        ballElement.style.backgroundColor = color === "rojo" ? "#ff4d4d" : "#4da6ff";
+        ballElement.classList.remove("animate");
+        void ballElement.offsetWidth; // Forzar reflow
+        ballElement.classList.add("animate");
+        setTimeout(() => {
+          ballElement.classList.remove("animate");
+        }, 1000);
+      }
+  
+      // Botones de simular y reiniciar
+      const simBtn = document.getElementById("simular-btn");
+      const reiniciarBtn = document.getElementById("reiniciar-btn");
+      simBtn.addEventListener("click", () => {
+        let numExp = Number(numExperimentosSelect.value);
         let count = 0;
-        // Se obtiene la cantidad de viajes a simular desde el selector
-        const simCount = Number(document.getElementById('numExperiments').value);
-        const interval = setInterval(() => {
-          simulateTrip();
+        let interval = setInterval(() => {
+          simulateExperiment();
           count++;
-          if (count >= simCount) clearInterval(interval);
+          if (count >= numExp) clearInterval(interval);
         }, 500);
       });
-      
-      resetBtn.addEventListener('click', function() {
-        totalTrips = 0;
-        ticketsCount = 0;
-        totalTripsDisplay.textContent = totalTrips;
-        ticketsCountDisplay.textContent = ticketsCount;
-        experimentalProbabilityDisplay.textContent = '0.00%';
-        experimentalBar.style.height = '0%';
-        experimentalBarValue.textContent = '0%';
-        progressBar.style.width = '0%';
-        radarPoints.forEach(rp => rp.classList.remove('active'));
+  
+      reiniciarBtn.addEventListener("click", () => {
+        totalSimulations = 0;
+        conditionCount = 0;
+        favorableCount = 0;
+        totalSimEl.textContent = 0;
+        condCountEl.textContent = 0;
+        favorableCountEl.textContent = 0;
+        expProbEl.textContent = "0.00";
+        progressEl.style.width = "0%";
       });
-      
-      // Funcionalidad de tooltips para los iconos de información
-      const infoIcons = document.querySelectorAll('.info-icon');
-      infoIcons.forEach(icon => {
-        icon.addEventListener('mouseover', function() {
-          const tooltipText = icon.getAttribute('data-tooltip');
-          const tooltip = document.createElement('div');
-          tooltip.classList.add('tooltip');
-          tooltip.textContent = tooltipText;
-          document.body.appendChild(tooltip);
-          const rect = icon.getBoundingClientRect();
-          tooltip.style.left = rect.left + 'px';
-          tooltip.style.top = (rect.bottom + 5) + 'px';
-          tooltip.style.display = 'block';
-          icon.addEventListener('mouseout', function() {
-            tooltip.remove();
-          });
-        });
-      });
-      
-      // Inicializar valores de visualización
-      updateTotalProbability();
-      updateTheoreticalProbability();
+  
+      // Inicialización
+      updateTheoretical();
+      updateSolution();
     });
   </script>
 </body>
